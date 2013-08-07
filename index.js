@@ -52,16 +52,16 @@ IDPGoogle.prototype.identity = function (token, callback) {
   this._newOAuth2(TOKEN.baseAddress).getOAuthAccessToken(token, this._tokenParams(), this._onGetOAuthAccessToken.bind(this));
 };
 
+IDPGoogle.prototype.get = function (url, accessToken, callback) {
+  this._newOAuth2(API.baseAddress).get(API.baseAddress + url, accessToken, callback);
+};
+
 IDPGoogle.prototype._newOAuth2 = function (baseAddress) {
   return new oauth2(this._clientId, this._clientSecret, baseAddress, AUTH.path, TOKEN.path);
 };
 
 IDPGoogle.prototype._authParams = function (params) {
-  var authParams = xtend(AUTH.params, params || {});
-
-  if (this._state) {
-    authParams.state = this._state;
-  }
+  var authParams = xtend(AUTH.params, {});
 
   if (this._redirectUri) {
     authParams.redirect_uri = this._redirectUri;
@@ -71,7 +71,7 @@ IDPGoogle.prototype._authParams = function (params) {
     authParams.scope = AUTH.scope.join(' ');
   }
 
-  return authParams;
+  return xtend(authParams, params);
 };
 
 IDPGoogle.prototype._tokenParams = function () {
@@ -104,7 +104,7 @@ IDPGoogle.prototype._extendIdentityWithAccessTokenResponse = function () {
 };
 
 IDPGoogle.prototype._getProfileWithIdentity = function () {
-  this._newOAuth2(API.baseAddress).get(API.baseAddress + '/plus/v1/people/me', this._identity.accessToken, this._onGetProfileWithIdentity.bind(this));
+  this.get('/plus/v1/people/me', this._identity.accessToken, this._onGetProfileWithIdentity.bind(this));
 };
 
 IDPGoogle.prototype._onGetProfileWithIdentity = function (err, response) {
@@ -113,10 +113,12 @@ IDPGoogle.prototype._onGetProfileWithIdentity = function (err, response) {
   }
   else {
     try {
-      response = JSON.parse(response);
+      var response = JSON.parse(response);
+
       if (response.emails && response.emails.length) {
         this._identity.email = response.emails.filter(function (e) { return e.primary; }).reduce(function (k,v) { return v.value }, '');
       }
+
       this._identity.name = response.displayName;
       this._identityCallback(null, xtend(this._identity, {
         url: response.url,
@@ -134,10 +136,6 @@ function idpGoogle(options) {
 
   idp.setClientId(options.clientId);
   idp.setClientSecret(options.clientSecret);
-
-  if (options.state) {
-    idp.setState(options.state);
-  }
 
   if (options.redirectUri) {
     idp.setRedirectUri(options.redirectUri);
