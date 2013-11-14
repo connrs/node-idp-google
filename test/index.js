@@ -121,3 +121,31 @@ test('Identity returns profile', function (t) {
     t.end();
   });
 });
+
+test('Refresh identity', function (t) {
+  var idp = idpGoogle({
+    clientSecret: clientSecret,
+    clientId: clientId
+  });
+
+  oauthMock.OAuth2.prototype.getOAuthAccessToken = function (token, params, callback) {
+    t.equal(params.grant_type, 'refresh_token');
+    t.equal(token, 'the_refresh_token');
+    callback(null, 'abcdefg', null, {
+      access_token: 'abcdefg',
+      expires_in: 3600,
+      id_token: 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjIyNTlmYjk5ODRmMTNlM2Q3MTM5MjdhOWI2MjY4ZTBjNTkyNTk5MWYifQ.eyJpc3MiOiJhY2NvdW50cy5nb29nbGUuY29tIiwiYXVkIjoiNDA3NDA4NzE4MTkyLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwiY2lkIjoiNDA3NDA4NzE4MTkyLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwiYXpwIjoiNDA3NDA4NzE4MTkyLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwidG9rZW5faGFzaCI6InB1VGw4WE5CVWVOZGhSbDZUZEtSVUEiLCJhdF9oYXNoIjoicHVUbDhYTkJVZU5kaFJsNlRkS1JVQSIsImlkIjoiMTA0OTg0NTE5OTUwMzA4NjAwOTE1Iiwic3ViIjoiMTA0OTg0NTE5OTUwMzA4NjAwOTE1IiwiaWF0IjoxMzc1NjQ5MDQyLCJleHAiOjEzNzU2NTI5NDJ9.B-vzQwt55BU1NJcKIETh551OAYWzj6JlOoaptzF-be2jpOjtoY11iG2lYTu3jTJ45TIfYyeXF737YBYYragT0WqJadwMgHEmalAFAWsPy_MQ2M1_CdasT2pd5C8OQwbR4KKC3O4Kh-B7tDEfzRUx8xDwgVjT90VVfNmOEUeqWtU'
+    });
+  };
+
+  oauthMock.OAuth2.prototype.get = function (url, token, callback) {
+    callback(null, '{}');
+  };
+
+  idp.refresh('the_refresh_token', function (err, identity) {
+    t.equal(identity.id, '104984519950308600915');
+    t.equal(identity.accessToken, 'abcdefg');
+    t.equal(Object.prototype.toString.call(identity.profile), '[object Object]');
+    t.end();
+  });
+});

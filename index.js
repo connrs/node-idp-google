@@ -52,6 +52,11 @@ IDPGoogle.prototype.identity = function (token, callback) {
   this._newOAuth2(TOKEN.baseAddress).getOAuthAccessToken(token, this._tokenParams(), this._onGetOAuthAccessToken.bind(this));
 };
 
+IDPGoogle.prototype.refresh = function (token, callback) {
+  this._identityCallback = callback;
+  this._newOAuth2(TOKEN.baseAddress).getOAuthAccessToken(token, this._refreshTokenParams(), this._onGetOAuthAccessToken.bind(this));
+};
+
 IDPGoogle.prototype.get = function (url, accessToken, callback) {
   this._newOAuth2(API.baseAddress).get(API.baseAddress + url, accessToken, callback);
 };
@@ -80,6 +85,12 @@ IDPGoogle.prototype._tokenParams = function () {
   if (this._redirectUri) {
     tokenParams.redirect_uri = this._redirectUri;
   }
+
+  return tokenParams;
+};
+
+IDPGoogle.prototype._refreshTokenParams = function () {
+  var tokenParams = xtend(TOKEN.params, { grant_type: 'refresh_token' });
 
   return tokenParams;
 };
